@@ -7,11 +7,13 @@
 </head>
 <body>
   <h1>Emotion Detection Demo</h1>
-  
+
   <video id="video" width="400" autoplay></video>
   <button id="start">Start Streaming</button>
   <button id="stop" disabled>Stop Streaming</button>
-  
+  <input type="text" id="videoUrl" placeholder="Enter Video URL for Inference" />
+  <button id="submitInference">Submit for Inference</button>
+
   <pre id="output"></pre>
 
   <script>
@@ -19,6 +21,9 @@
     const output = document.getElementById('output');
     const startButton = document.getElementById('start');
     const stopButton = document.getElementById('stop');
+    const submitInferenceButton = document.getElementById('submitInference');
+    const videoUrlInput = document.getElementById('videoUrl');
+
     let ws;
     let mediaRecorder;
     let stream;
@@ -31,11 +36,9 @@
         startButton.disabled = true;
         stopButton.disabled = false;
 
-        ws = new WebSocket('wss://lovelens.onrender.com'); // Adjust WebSocket URL if needed
-        
-        ws.onopen = () => console.log('WebSocket connected');
-        ws.onerror = (error) => console.error('WebSocket Error:', error);
+        ws = new WebSocket('wss://lovelens.onrender.com'); // Adjust if needed
 
+        ws.onopen = () => console.log('WebSocket connected');
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
           output.textContent = JSON.stringify(data, null, 2);
@@ -45,7 +48,7 @@
 
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
-            ws.send(event.data);
+            ws.send(JSON.stringify({ type: 'stream', data: event.data }));
           }
         };
 
@@ -61,13 +64,29 @@
       mediaRecorder.stop();
       stream.getTracks().forEach(track => track.stop());
       video.srcObject = null;
-
-      if (ws) {
-        ws.close();
-      }
+      if (ws) ws.close();
 
       startButton.disabled = false;
       stopButton.disabled = true;
+    });
+
+    // Submit for Inference
+    submitInferenceButton.addEventListener('click', () => {
+      const videoUrl = videoUrlInput.value;
+      if (!videoUrl) {
+        alert('Please enter a video URL.');
+        return;
+      }
+
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'inference',
+          modelId: '2df29f00-5b8e-45e0-b82b-0854af64f424',
+          videoUrl: videoUrl,
+        }));
+      } else {
+        alert('WebSocket connection is not open.');
+      }
     });
   </script>
 </body>
