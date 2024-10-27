@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hume WebSocket Demo</title>
+</head>
+<body>
+  <h1>Emotion Detection Demo</h1>
+  <video id="video" autoplay width="400"></video>
+  <button id="start">Start Streaming</button>
+  <pre id="output"></pre>
+
+  <script>
+    const video = document.getElementById('video');
+    const output = document.getElementById('output');
+    const startButton = document.getElementById('start');
+    let ws;
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+
+        startButton.addEventListener('click', () => {
+          ws = new WebSocket('wss://your-backend-service.onrender.com');
+
+          ws.onopen = () => console.log('WebSocket connected');
+          ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            output.textContent = JSON.stringify(data, null, 2);
+          };
+
+          const mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.ondataavailable = (event) => {
+            ws.send(event.data);
+          };
+          mediaRecorder.start(1000); // Send video data every second
+        });
+      })
+      .catch(err => console.error('Webcam access denied:', err));
+  </script>
+</body>
+</html>
