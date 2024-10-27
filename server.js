@@ -12,33 +12,28 @@ app.use(express.static(path.join(__dirname, 'public')));
 // WebSocket setup
 const wss = new WebSocket.Server({ noServer: true });
 
-wss.on('connection', (ws) => {
-  console.log('Client connected');
-  ws.on('message', async (data) => {
-    try {
-      const response = await fetch('https://api.hume.ai/v0/stream/models', {
-        method: 'POST',
-        headers: {
-          'X-Hume-Api-Key': process.env.HUME_API_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ model_id: 'facial-expression', video_data: data }),
-      });
-      const result = await response.json();
-      ws.send(JSON.stringify(result));
-    } catch (error) {
-      console.error('Error with Hume API:', error);
-      ws.send(JSON.stringify({ error: 'API error occurred' }));
+ws.on('message', async (data) => {
+  try {
+    const response = await fetch('https://api.hume.ai/v0/stream/models', {
+      method: 'POST',
+      headers: {
+        'X-Hume-Api-Key': process.env.HUME_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model_id: 'facial-expression',
+        video_data: data.toString('base64'), // Encode video data
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`);
     }
-  });
 
-  ws.on('close', () => console.log('Client disconnected'));
-});
-
-// Upgrade HTTP connection to WebSocket
-const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-server.on('upgrade', (req, socket, head) => {
-  wss.handleUpgrade(req, socket, head, (ws) => {
-    wss.emit('connection', ws, req);
-  });
+    const result = await response.json();
+    ws.send(JSON.stringify(result));
+  } catch (error) {
+    console.error('Error with Hume API:', error);
+    ws.send(JSON.stringify({ error: 'API request failed. Check logs.' }));
+  }
 });

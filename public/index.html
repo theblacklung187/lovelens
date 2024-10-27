@@ -7,37 +7,67 @@
 </head>
 <body>
   <h1>Emotion Detection Demo</h1>
-  <video id="video" autoplay width="400"></video>
+  
+  <video id="video" width="400" autoplay></video>
   <button id="start">Start Streaming</button>
+  <button id="stop" disabled>Stop Streaming</button>
+  
   <pre id="output"></pre>
 
   <script>
     const video = document.getElementById('video');
     const output = document.getElementById('output');
     const startButton = document.getElementById('start');
-    let ws;
+    const stopButton = document.getElementById('stop');
+    let ws; // WebSocket reference
+    let mediaRecorder; // Recorder reference
+    let stream; // Media stream reference
 
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
+    // Handle Start Streaming
+    startButton.addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         video.srcObject = stream;
+        startButton.disabled = true; // Disable start to avoid multiple clicks
+        stopButton.disabled = false; // Enable stop button
 
-        startButton.addEventListener('click', () => {
-          ws = new WebSocket('https://lovelens.onrender.com');
+        ws = new WebSocket('wss://lovelens.onrender.com'); // Replace with your WebSocket URL
+        
+        ws.onopen = () => console.log('WebSocket connected');
 
-          ws.onopen = () => console.log('WebSocket connected');
-          ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            output.textContent = JSON.stringify(data, null, 2);
-          };
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          output.textContent = JSON.stringify(data, null, 2); // Display API results
+        };
 
-          const mediaRecorder = new MediaRecorder(stream);
-          mediaRecorder.ondataavailable = (event) => {
-            ws.send(event.data);
-          };
-          mediaRecorder.start(1000); // Send video data every second
-        });
-      })
-      .catch(err => console.error('Webcam access denied:', err));
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+        
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+            ws.send(event.data); // Send video/audio data to WebSocket
+          }
+        };
+
+        mediaRecorder.start(1000); // Capture data every second
+      } catch (error) {
+        console.error('Error accessing webcam:', error);
+        alert('Unable to access webcam. Please ensure it is enabled.');
+      }
+    });
+
+    // Handle Stop Streaming
+    stopButton.addEventListener('click', () => {
+      mediaRecorder.stop(); // Stop media recorder
+      stream.getTracks().forEach(track => track.stop()); // Stop all video/audio tracks
+      video.srcObject = null; // Clear video display
+
+      if (ws) {
+        ws.close(); // Close WebSocket connection
+      }
+
+      startButton.disabled = false; // Enable start button
+      stopButton.disabled = true; // Disable stop button
+    });
   </script>
 </body>
 </html>
