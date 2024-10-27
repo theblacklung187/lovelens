@@ -2,9 +2,13 @@ const path = require('path');
 const express = require('express');
 const WebSocket = require('ws');
 const fetch = require('node-fetch');
+const fs = require('fs');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+
+// Load configuration
+const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
@@ -60,6 +64,7 @@ wss.on('connection', (ws) => {
           body: JSON.stringify({
             model_id: modelId || 'facial-expression',
             video_data: data.toString('base64'), // Ensure Base64 encoding
+            config: config // Include the configuration
           }),
         });
 

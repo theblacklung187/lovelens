@@ -36,7 +36,7 @@
         startButton.disabled = true;
         stopButton.disabled = false;
 
-        ws = new WebSocket('wss://lovelens.onrender.com'); // Adjust if needed
+        ws = new WebSocket(`wss://api.hume.ai/v0/evi/chat?api_key=${apiKey}`); // Adjust if needed
 
         ws.onopen = () => console.log('WebSocket connected');
         ws.onmessage = (event) => {
