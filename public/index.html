@@ -19,54 +19,55 @@
     const output = document.getElementById('output');
     const startButton = document.getElementById('start');
     const stopButton = document.getElementById('stop');
-    let ws; // WebSocket reference
-    let mediaRecorder; // Recorder reference
-    let stream; // Media stream reference
+    let ws;
+    let mediaRecorder;
+    let stream;
 
-    // Handle Start Streaming
+    // Start Streaming
     startButton.addEventListener('click', async () => {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         video.srcObject = stream;
-        startButton.disabled = true; // Disable start to avoid multiple clicks
-        stopButton.disabled = false; // Enable stop button
+        startButton.disabled = true;
+        stopButton.disabled = false;
 
-        ws = new WebSocket('wss://lovelens.onrender.com'); // Replace with your WebSocket URL
+        ws = new WebSocket('wss://lovelens.onrender.com'); // Adjust WebSocket URL if needed
         
         ws.onopen = () => console.log('WebSocket connected');
+        ws.onerror = (error) => console.error('WebSocket Error:', error);
 
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
-          output.textContent = JSON.stringify(data, null, 2); // Display API results
+          output.textContent = JSON.stringify(data, null, 2);
         };
 
         mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-        
+
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
-            ws.send(event.data); // Send video/audio data to WebSocket
+            ws.send(event.data);
           }
         };
 
-        mediaRecorder.start(1000); // Capture data every second
+        mediaRecorder.start(1000); // Capture every second
       } catch (error) {
         console.error('Error accessing webcam:', error);
         alert('Unable to access webcam. Please ensure it is enabled.');
       }
     });
 
-    // Handle Stop Streaming
+    // Stop Streaming
     stopButton.addEventListener('click', () => {
-      mediaRecorder.stop(); // Stop media recorder
-      stream.getTracks().forEach(track => track.stop()); // Stop all video/audio tracks
-      video.srcObject = null; // Clear video display
+      mediaRecorder.stop();
+      stream.getTracks().forEach(track => track.stop());
+      video.srcObject = null;
 
       if (ws) {
-        ws.close(); // Close WebSocket connection
+        ws.close();
       }
 
-      startButton.disabled = false; // Enable start button
-      stopButton.disabled = true; // Disable stop button
+      startButton.disabled = false;
+      stopButton.disabled = true;
     });
   </script>
 </body>
