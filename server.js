@@ -3,6 +3,7 @@ const express = require('express');
 const WebSocket = require('ws');
 const fetch = require('node-fetch');
 const fs = require('fs');
+require('dotenv').config();
 const app = express();
 
 const PORT = process.env.PORT || 3000;
