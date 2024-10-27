@@ -1,35 +1,44 @@
-const WebSocket = require('ws');
+const path = require('path');
 const express = require('express');
+const WebSocket = require('ws');
 const fetch = require('node-fetch');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// WebSocket setup
 const wss = new WebSocket.Server({ noServer: true });
 
-// WebSocket logic
 wss.on('connection', (ws) => {
   console.log('Client connected');
-
   ws.on('message', async (data) => {
-    const response = await fetch('https://api.hume.ai/v0/stream/models', {
-      method: 'POST',
-      headers: {
-        'X-Hume-Api-Key': process.env.HUME_API_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ model_id: 'facial-expression', video_data: data }),
-    });
-    const result = await response.json();
-    ws.send(JSON.stringify(result));
+    try {
+      const response = await fetch('https://api.hume.ai/v0/stream/models', {
+        method: 'POST',
+        headers: {
+          'X-Hume-Api-Key': process.env.HUME_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ model_id: 'facial-expression', video_data: data }),
+      });
+      const result = await response.json();
+      ws.send(JSON.stringify(result));
+    } catch (error) {
+      console.error('Error with Hume API:', error);
+      ws.send(JSON.stringify({ error: 'API error occurred' }));
+    }
   });
 
   ws.on('close', () => console.log('Client disconnected'));
 });
 
-// Handle server upgrades for WebSocket
-const server = app.listen(PORT, () => console.log(`Server running on ${PORT}`));
-server.on('upgrade', (request, socket, head) => {
-  wss.handleUpgrade(request, socket, head, (ws) => {
-    wss.emit('connection', ws, request);
+// Upgrade HTTP connection to WebSocket
+const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.on('upgrade', (req, socket, head) => {
+  wss.handleUpgrade(req, socket, head, (ws) => {
+    wss.emit('connection', ws, req);
   });
 });
