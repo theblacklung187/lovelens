@@ -14,22 +14,27 @@ const wss = new WebSocket.Server({ noServer: true });
 
 // Inference API function (batch processing with Hume AI)
 async function runInference(modelId, urls = []) {
-  const response = await fetch('https://api.hume.ai/v0/batch/jobs/tl/inference', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Hume-Api-Key': process.env.HUME_API_KEY,
-    },
-    body: JSON.stringify({
-      custom_model: { id: modelId },
-      urls: urls,
-    }),
-  });
+  try {
+    const response = await fetch('https://api.hume.ai/v0/batch/jobs/tl/inference', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Hume-Api-Key': process.env.HUME_API_KEY,
+      },
+      body: JSON.stringify({
+        custom_model: { id: modelId },
+        urls: urls,
+      }),
+    });
 
-  if (!response.ok) {
-    throw new Error(`Inference API Error: ${response.statusText}`);
+    if (!response.ok) {
+      throw new Error(`Inference API Error: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error in runInference:', error);
+    throw error;
   }
-  return await response.json();
 }
 
 // WebSocket connection logic
