@@ -22,7 +22,7 @@
         video.srcObject = stream;
 
         startButton.addEventListener('click', () => {
-          ws = new WebSocket('wss://your-backend-service.onrender.com');
+          ws = new WebSocket('https://lovelens.onrender.com');
 
           ws.onopen = () => console.log('WebSocket connected');
           ws.onmessage = (event) => {
