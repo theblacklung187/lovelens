@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: hume-websocket-server
+    env: node
+    plan: free
+    buildCommand: 'npm install'
+    startCommand: 'npm start'
+    envVars:
+      - key: HUME_API_KEY
+        value: ${HUME_API_KEY}
+      - key: HUME_SECRET_KEY
+        value: ${HUME_SECRET_KEY}
+      - key: HUME_CONFIG_ID
+        value: ${HUME_CONFIG_ID}
+      - key: MODEL_ID
+        value: ${MODEL_ID}
+      - key: MODEL_VERSION_ID
+        value: ${MODEL_VERSION_ID}
+      - key: PORT
+        value: ${PORT}
