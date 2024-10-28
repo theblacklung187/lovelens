@@ -1,8 +1,0 @@
-{
-    "evi_version": "2",
-    "name": "EVI 2 config",
-    "voice": {
-      "provider": "HUME_AI",
-      "name": "DACHER"
-    }
-  }
